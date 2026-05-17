@@ -1,6 +1,7 @@
 #!/bin/bash
 
-yum install fontconfig java-17-openjdk -y
+#yum install fontconfig java-17-openjdk -y
+dnf install -y java-21-openjdk fontconfig
 yum install -y yum-utils
 yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
 yum -y install terraform

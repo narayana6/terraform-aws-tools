@@ -4,8 +4,8 @@ module "jenkins" {
   name = "jenkins-tf"
 
   instance_type          = "t3.small"
-  vpc_security_group_ids = ["sg-0fea5e49e962e81c9"] #replace your SG
-  subnet_id = "subnet-0ea509ad4cba242d7" #replace your Subnet
+  vpc_security_group_ids = ["sg-03fabbef88a55c9b0"] #replace your SG
+  subnet_id = "subnet-0510e47d88a7ef74f" #replace your Subnet
   ami = data.aws_ami.ami_info.id
   user_data = file("jenkins.sh")
   tags = {
@@ -19,9 +19,9 @@ module "jenkins_agent" {
   name = "jenkins-agent"
 
   instance_type          = "t3.small"
-  vpc_security_group_ids = ["sg-0fea5e49e962e81c9"]
+  vpc_security_group_ids = ["sg-03fabbef88a55c9b0"]
   # convert StringList to list and get first element
-  subnet_id = "subnet-0ea509ad4cba242d7"
+  subnet_id = "subnet-0510e47d88a7ef74f"
   ami = data.aws_ami.ami_info.id
   user_data = file("jenkins-agent.sh")
   tags = {
@@ -37,26 +37,56 @@ resource "aws_key_pair" "tools" {
   # ~ means windows home directory
 }
 
+# module "nexus" {
+#   source  = "terraform-aws-modules/ec2-instance/aws"
+
+#   name = "nexus"
+
+#   instance_type          = "t3.medium"
+#   vpc_security_group_ids = ["sg-03fabbef88a55c9b0"]
+#   # convert StringList to list and get first element
+#   subnet_id = "subnet-0510e47d88a7ef74f"
+#   ami = data.aws_ami.nexus_ami_info.id
+#   key_name = aws_key_pair.tools.key_name
+#   root_block_device = {
+    
+#       volume_type = "gp3"
+#       volume_size = 30
+    
+#   }
+#   tags = {
+#     Name = "nexus"
+#   }
+# }
+
+
+#this is narayana because free nexus iam not there using this
 module "nexus" {
   source  = "terraform-aws-modules/ec2-instance/aws"
 
   name = "nexus"
 
-  instance_type          = "t3.medium"
-  vpc_security_group_ids = ["sg-0fea5e49e962e81c9"]
-  # convert StringList to list and get first element
-  subnet_id = "subnet-0ea509ad4cba242d7"
-  ami = data.aws_ami.nexus_ami_info.id
-  key_name = aws_key_pair.tools.key_name
-  root_block_device = [
-    {
-      volume_type = "gp3"
-      volume_size = 30
-    }
-  ]
-  tags = {
-    Name = "nexus"
-  }
+  instance_type          = "t3.small"
+  vpc_security_group_ids = ["sg-03fabbef88a55c9b0"]
+  subnet_id              = "subnet-0510e47d88a7ef74f"
+  ami                    = data.aws_ami.nexus_ami_info.id
+  
+  # Add this to your user_data script before starting nexus
+
+  # This installs Nexus on the free AMI automatically
+  user_data = <<-EOF
+    #!/bin/bash
+    sudo yum update -y
+    sudo yum install java-17-amazon-corretto-devel -y
+    cd /opt
+    sudo wget https://sonatype.com
+    sudo tar -xvzf latest-unix.tar.gz
+    sudo mv nexus-3* nexus
+    sudo useradd nexus
+    sudo chown -R nexus:nexus /opt/nexus
+    sudo chown -R nexus:nexus /opt/sonatype-work
+    sudo -u nexus /opt/nexus/bin/nexus start
+  EOF
 }
 
 module "records" {
